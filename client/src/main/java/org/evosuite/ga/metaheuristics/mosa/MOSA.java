@@ -255,12 +255,9 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 	}
 
 	/**
-	 * This method is used by the Progress Monitor at the and of each generation to show the totol coverage reached by the algorithm.
+	 * This method is used by the Progress Monitor at the and of each generation to show the total coverage reached by the algorithm.
 	 * Since the Progress Monitor need a "Suite", this method artificially creates a "SuiteChromosome" (see {@link MOSA#suiteFitness}) 
-	 * as the union of all test cases stored in {@link MOSA#archive}. 
-	 * 
-	 * The coverage score of the "SuiteChromosome" is given by the percentage of test goals covered (goals in {@link MOSA#archive})
-	 * onto the total number of goals <code> this.fitnessFunctions</code> (see {@link GeneticAlgorithm}).
+	 * as the union of all test cases stored in {@link MOSA#archive}.
 	 * 
 	 * @return "SuiteChromosome" directly consumable by the Progress Monitor.
 	 */
@@ -275,13 +272,10 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		for (T test : archiveContent) {
 			best.addTest((TestChromosome) test);
 		}
-		// compute overall fitness and coverage
-		double coverage = ((double) this.getNumberOfCoveredGoals()) / ((double) this.fitnessFunctions.size());
+		// evaluate individual, i.e., compute its fitness and coverage
 		for (TestSuiteFitnessFunction suiteFitness : suiteFitnesses){
-			best.setCoverage(suiteFitness, coverage);
-			best.setFitness(suiteFitness,  this.fitnessFunctions.size() - this.getNumberOfCoveredGoals());
+			suiteFitness.getFitness(best);
 		}
-		//suiteFitness.getFitness(best);
 		return (T) best;
 	}
 
