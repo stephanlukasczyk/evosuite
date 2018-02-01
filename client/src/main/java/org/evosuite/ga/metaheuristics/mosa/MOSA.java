@@ -59,6 +59,8 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 	/** Map used to store the covered test goals (keys of the map) and the corresponding covering test cases (values of the map) **/
 	protected Map<FitnessFunction<T>, T> archive = new LinkedHashMap<FitnessFunction<T>, T>();
 
+	private TestSuiteChromosome bestIndividualSoFar = null;
+
 	/** Boolean vector to indicate whether each test goal is covered or not. **/
 	protected Set<FitnessFunction<T>> uncoveredGoals = new LinkedHashSet<FitnessFunction<T>>();
 
@@ -225,10 +227,13 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		if (archive.containsKey(covered)){
 			int bestSize = this.archive.get(covered).size();
 			int size = solution.size();
-			if (size < bestSize)
+			if (size < bestSize) {
 				this.archive.put(covered, solution);
+				this.bestIndividualSoFar = null;
+			}
 		} else {
 			archive.put(covered, solution);
+			this.bestIndividualSoFar = null;
 			this.uncoveredGoals.remove(covered);
 		}
 	}
@@ -263,6 +268,10 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 	 */
 	@Override @SuppressWarnings("unchecked")
 	public T getBestIndividual() {
+		if (this.bestIndividualSoFar != null) {
+			return (T) this.bestIndividualSoFar;
+		}
+
 		List<T> archiveContent = this.getArchive();
 		if (archiveContent.isEmpty()) {
 			return (T) new TestSuiteChromosome();
@@ -276,6 +285,8 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		for (TestSuiteFitnessFunction suiteFitness : suiteFitnesses){
 			suiteFitness.getFitness(best);
 		}
+
+		this.bestIndividualSoFar = best;
 		return (T) best;
 	}
 
