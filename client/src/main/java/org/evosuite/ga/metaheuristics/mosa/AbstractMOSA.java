@@ -26,7 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.evosuite.ProgressMonitor;
 import org.evosuite.Properties;
 import org.evosuite.Properties.Criterion;
@@ -326,13 +326,9 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 		for (T test : finalTestSuite) {
 			bestTestCases.addTest((TestChromosome) test);
 		}
-		for (FitnessFunction<T> f : this.getCoveredGoals()){
-			bestTestCases.getCoveredGoals().add((TestFitnessFunction) f);
-		}
-		// evaluate individual, i.e., compute its fitness and coverage
-		for (TestSuiteFitnessFunction suiteFitness : suiteFitnesses){
-			suiteFitness.getFitness(bestTestCases);
-		}
+		// compute overall fitness and coverage
+		this.setCoverageValuesAndFitnessValues(bestTestCases, this.getNumCoveredGoalsPerCriterion());
+
 		List<T> bests = new ArrayList<T>(1);
 		bests.add((T) bestTestCases);
 		return bests;
@@ -420,6 +416,58 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 	protected abstract double numberOfCoveredTargets();
 
 	public abstract Set<FitnessFunction<T>> getCoveredGoals();
+
+	/**
+	 * Returns the map that keeps record of how many goals of each fitness function type have been
+	 * covered.
+	 * 
+	 * @return
+	 */
+	protected abstract Map<String, MutablePair<Integer, Integer>> getNumCoveredGoalsPerCriterion();
+
+	/**
+	 * Computes overall coverage and fitness of a {@link org.evosuite.testsuite.TestSuiteChromosome}
+	 * object based on a record of how many goals of each fitness function type have been covered.
+	 * 
+	 * @param suite a {@link org.evosuite.testsuite.TestSuiteChromosome} object
+	 * @param numCoveredGoalsPerCriterion a map with the record of how many goals of each fitness
+	 *        function type have been covered.
+	 */
+	protected void setCoverageValuesAndFitnessValues(TestSuiteChromosome suite,
+		  Map<String, MutablePair<Integer, Integer>> numCoveredGoalsPerCriterion) {
+		assert numCoveredGoalsPerCriterion.size() == this.suiteFitnesses.size();
+
+		double coverage = 0.0;
+		int totalNumOfCoveredGoals = 0, totalNumOfNotCoveredGoals = 0;
+
+		for (String typeOfGoal : numCoveredGoalsPerCriterion.keySet()) {
+			double numberCoveredGoals = numCoveredGoalsPerCriterion.get(typeOfGoal).getLeft();
+			double totalNumberOfGoals = numCoveredGoalsPerCriterion.get(typeOfGoal).getRight();
+			assert numberCoveredGoals <= totalNumberOfGoals;
+
+			if (totalNumberOfGoals == 0
+				  && typeOfGoal.equals(ExceptionCoverageTestFitness.class.getCanonicalName())) {
+				coverage += 1.0;
+			} else {
+				assert totalNumberOfGoals > 0;
+				coverage += (numberCoveredGoals / totalNumberOfGoals);
+			}
+
+			totalNumOfCoveredGoals += numberCoveredGoals;
+			totalNumOfNotCoveredGoals += (totalNumberOfGoals - numberCoveredGoals);
+		}
+		coverage /= (double) numCoveredGoalsPerCriterion.size();
+
+		for (TestSuiteFitnessFunction suiteFitness : this.suiteFitnesses) {
+			suite.setFitness(suiteFitness, 1.0 - coverage);
+			suite.setCoverage(suiteFitness, coverage);
+
+			assert totalNumOfCoveredGoals >= 0;
+			suite.setNumOfCoveredGoals(suiteFitness, totalNumOfCoveredGoals);
+			assert totalNumOfNotCoveredGoals >= 0;
+			suite.setNumOfNotCoveredGoals(suiteFitness, totalNumOfNotCoveredGoals);
+		}
+	}
 
 	/**
 	 * This method analyzes the execution results of a TestChromosome looking for generated exceptions.

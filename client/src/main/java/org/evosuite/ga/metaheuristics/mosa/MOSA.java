@@ -25,7 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import org.apache.commons.lang3.tuple.MutablePair;
 import org.evosuite.Properties;
 import org.evosuite.Properties.Criterion;
 import org.evosuite.coverage.exception.ExceptionCoverageFactory;
@@ -58,6 +58,13 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 
 	/** Map used to store the covered test goals (keys of the map) and the corresponding covering test cases (values of the map) **/
 	protected Map<FitnessFunction<T>, T> archive = new LinkedHashMap<FitnessFunction<T>, T>();
+
+	/**
+	 * Map used to keep record of how many goals of each fitness function type have been covered.
+	 * The key of the map is a test fitness name, e.g., org.evosuite.coverage.branch.BranchCoverageTestFitness,
+	 * and the Pair represents <number of goals covered, total number of goals>.
+	 */
+	private Map<String, MutablePair<Integer, Integer>> numCoveredGoalsPerCriterion = new LinkedHashMap<String, MutablePair<Integer, Integer>>();
 
 	private TestSuiteChromosome bestIndividualSoFar = null;
 
@@ -176,6 +183,18 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		// keep track of covered goals
 		for (FitnessFunction<T> goal : fitnessFunctions) {
 			uncoveredGoals.add(goal);
+
+			String typeOfGoal = goal.getClass().getCanonicalName();
+			if (this.numCoveredGoalsPerCriterion.containsKey(typeOfGoal)) {
+				int totalNumGoals = this.numCoveredGoalsPerCriterion.get(typeOfGoal).getRight() + 1;
+				this.numCoveredGoalsPerCriterion.get(typeOfGoal).setRight(totalNumGoals);
+			} else {
+				this.numCoveredGoalsPerCriterion.put(typeOfGoal, new MutablePair<Integer, Integer>(0, 1));
+			}
+		}
+
+		if (ArrayUtil.contains(Properties.CRITERION, Criterion.EXCEPTION)) {
+			this.numCoveredGoalsPerCriterion.put(ExceptionCoverageTestFitness.class.getCanonicalName(), new MutablePair<Integer, Integer>(0, 0));
 		}
 
 		//initialize population
@@ -235,11 +254,60 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 			archive.put(covered, solution);
 			this.bestIndividualSoFar = null;
 			this.uncoveredGoals.remove(covered);
+
+			String typeOfGoal = covered.getClass().getCanonicalName();
+			assert this.numCoveredGoalsPerCriterion.containsKey(typeOfGoal);
+
+			// in case of being an exception we must update the total number of goals as well
+			if (covered instanceof ExceptionCoverageTestFitness) {
+				int totalNumGoals = this.numCoveredGoalsPerCriterion.get(typeOfGoal).getRight() + 1;
+				this.numCoveredGoalsPerCriterion.get(typeOfGoal).setRight(totalNumGoals);
+			}
+
+			int howManyCoveredSoFar = this.numCoveredGoalsPerCriterion.get(typeOfGoal).getLeft() + 1;
+			this.numCoveredGoalsPerCriterion.get(typeOfGoal).setLeft(howManyCoveredSoFar);
+			assert this.numCoveredGoalsPerCriterion.get(typeOfGoal).getLeft() <= this.numCoveredGoalsPerCriterion.get(typeOfGoal).getRight();
 		}
 	}
 
 	protected List<T> getArchive() {
 		return new ArrayList<T>(new LinkedHashSet<T>(this.archive.values()));
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	protected Map<String, MutablePair<Integer, Integer>> getNumCoveredGoalsPerCriterion() {
+		if (Properties.ENABLE_ASSERTS_FOR_EVOSUITE) {
+			// sanity checks before returning it
+			for (String typeOfGoal : this.numCoveredGoalsPerCriterion.keySet()) {
+				int numberCoveredGoals = this.numCoveredGoalsPerCriterion.get(typeOfGoal).getLeft();
+				int totalNumberOfGoals = numCoveredGoalsPerCriterion.get(typeOfGoal).getRight();
+				assert numberCoveredGoals <= totalNumberOfGoals;
+				int numberNotCoveredGoals = totalNumberOfGoals - numberCoveredGoals;
+				assert numberNotCoveredGoals >= 0;
+
+				// check whether the archive agrees
+				int howManyGoalOfThisHaveBeenCovered = 0;
+				for (FitnessFunction<T> ff : this.archive.keySet()) {
+					if (ff.getClass().getCanonicalName().equals(typeOfGoal)) {
+						howManyGoalOfThisHaveBeenCovered++;
+					}
+				}
+				assert numberCoveredGoals == howManyGoalOfThisHaveBeenCovered;
+
+				// check whether the set of uncovered goals agrees
+				int howManyGoalOfThisHaveNotBeenCovered = 0;
+				for (FitnessFunction<T> ff : this.uncoveredGoals) {
+					if (ff.getClass().getCanonicalName().equals(typeOfGoal)) {
+						howManyGoalOfThisHaveNotBeenCovered++;
+					}
+				}
+				assert numberNotCoveredGoals == howManyGoalOfThisHaveNotBeenCovered;
+			}
+		}
+
+		return this.numCoveredGoalsPerCriterion;
 	}
 
 	protected List<T> getFinalTestSuite() {
@@ -281,10 +349,8 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 		for (T test : archiveContent) {
 			best.addTest((TestChromosome) test);
 		}
-		// evaluate individual, i.e., compute its fitness and coverage
-		for (TestSuiteFitnessFunction suiteFitness : suiteFitnesses){
-			suiteFitness.getFitness(best);
-		}
+		// compute overall fitness and coverage
+		this.setCoverageValuesAndFitnessValues(best, this.numCoveredGoalsPerCriterion);
 
 		this.bestIndividualSoFar = best;
 		return (T) best;
