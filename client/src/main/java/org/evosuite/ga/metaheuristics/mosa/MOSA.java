@@ -59,13 +59,6 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 	/** Map used to store the covered test goals (keys of the map) and the corresponding covering test cases (values of the map) **/
 	protected Map<FitnessFunction<T>, T> archive = new LinkedHashMap<FitnessFunction<T>, T>();
 
-	/**
-	 * Map used to keep record of how many goals of each fitness function type have been covered.
-	 * The key of the map is a test fitness name, e.g., org.evosuite.coverage.branch.BranchCoverageTestFitness,
-	 * and the Pair represents <number of goals covered, total number of goals>.
-	 */
-	private Map<String, MutablePair<Integer, Integer>> numCoveredGoalsPerCriterion = new LinkedHashMap<String, MutablePair<Integer, Integer>>();
-
 	private TestSuiteChromosome bestIndividualSoFar = null;
 
 	/** Boolean vector to indicate whether each test goal is covered or not. **/
@@ -185,16 +178,10 @@ public class MOSA<T extends Chromosome> extends AbstractMOSA<T> {
 			uncoveredGoals.add(goal);
 
 			String typeOfGoal = goal.getClass().getCanonicalName();
-			if (this.numCoveredGoalsPerCriterion.containsKey(typeOfGoal)) {
-				int totalNumGoals = this.numCoveredGoalsPerCriterion.get(typeOfGoal).getRight() + 1;
-				this.numCoveredGoalsPerCriterion.get(typeOfGoal).setRight(totalNumGoals);
-			} else {
-				this.numCoveredGoalsPerCriterion.put(typeOfGoal, new MutablePair<Integer, Integer>(0, 1));
-			}
-		}
+			assert this.numCoveredGoalsPerCriterion.containsKey(typeOfGoal);
 
-		if (ArrayUtil.contains(Properties.CRITERION, Criterion.EXCEPTION)) {
-			this.numCoveredGoalsPerCriterion.put(ExceptionCoverageTestFitness.class.getCanonicalName(), new MutablePair<Integer, Integer>(0, 0));
+			int totalNumGoals = this.numCoveredGoalsPerCriterion.get(typeOfGoal).getRight() + 1;
+			this.numCoveredGoalsPerCriterion.get(typeOfGoal).setRight(totalNumGoals);
 		}
 
 		//initialize population

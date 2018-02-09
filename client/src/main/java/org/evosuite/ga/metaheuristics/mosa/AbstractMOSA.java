@@ -32,16 +32,15 @@ import org.evosuite.Properties;
 import org.evosuite.Properties.Criterion;
 import org.evosuite.coverage.FitnessFunctions;
 import org.evosuite.coverage.archive.TestsArchive;
-import org.evosuite.coverage.branch.BranchCoverageSuiteFitness;
-import org.evosuite.coverage.exception.ExceptionCoverageFactory;
+import org.evosuite.coverage.branch.BranchCoverageTestFitness;
+import org.evosuite.coverage.cbranch.CBranchTestFitness;
 import org.evosuite.coverage.exception.ExceptionCoverageHelper;
-import org.evosuite.coverage.exception.ExceptionCoverageSuiteFitness;
 import org.evosuite.coverage.exception.ExceptionCoverageTestFitness;
-import org.evosuite.coverage.line.LineCoverageSuiteFitness;
-import org.evosuite.coverage.method.MethodCoverageSuiteFitness;
-import org.evosuite.coverage.mutation.StrongMutationSuiteFitness;
-import org.evosuite.coverage.mutation.WeakMutationSuiteFitness;
-import org.evosuite.coverage.statement.StatementCoverageSuiteFitness;
+import org.evosuite.coverage.io.output.OutputCoverageTestFitness;
+import org.evosuite.coverage.line.LineCoverageTestFitness;
+import org.evosuite.coverage.method.MethodCoverageTestFitness;
+import org.evosuite.coverage.method.MethodNoExceptionCoverageTestFitness;
+import org.evosuite.coverage.mutation.WeakMutationTestFitness;
 import org.evosuite.ga.Chromosome;
 import org.evosuite.ga.ChromosomeFactory;
 import org.evosuite.ga.ConstructionFailedException;
@@ -92,6 +91,13 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 	protected Ranking<T> ranking;
 
 	/**
+	 * Map used to keep record of how many goals of each fitness function type have been covered.
+	 * The key of the map is a test fitness name, e.g., org.evosuite.coverage.branch.BranchCoverageTestFitness,
+	 * and the Pair represents <number of goals covered, total number of goals>.
+	 */
+	protected Map<String, MutablePair<Integer, Integer>> numCoveredGoalsPerCriterion = new LinkedHashMap<String, MutablePair<Integer, Integer>>();
+
+	/**
 	 * Constructor
 	 * 
 	 * @param factory
@@ -111,6 +117,8 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 			ranking = new FastNonDominatedSorting<T>();
 		else
 			ranking = new RankBasedPreferenceSorting<T>(); // default ranking strategy
+
+		this.initNumCoveredGoalsPerCriterionMap();
 	}
 
 	/**
@@ -425,6 +433,49 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 	 */
 	protected abstract Map<String, MutablePair<Integer, Integer>> getNumCoveredGoalsPerCriterion();
 
+	private void initNumCoveredGoalsPerCriterionMap() {
+		for (Criterion criterion : Properties.CRITERION) {
+			String typeOfGoal = null;
+
+			switch (criterion) {
+				case LINE:
+					typeOfGoal = LineCoverageTestFitness.class.getCanonicalName();
+					break;
+				case BRANCH:
+					typeOfGoal = BranchCoverageTestFitness.class.getCanonicalName();
+					break;
+				case EXCEPTION:
+					typeOfGoal = ExceptionCoverageTestFitness.class.getCanonicalName();
+					break;
+				case WEAKMUTATION:
+					typeOfGoal = WeakMutationTestFitness.class.getCanonicalName();
+					break;
+				case OUTPUT:
+					typeOfGoal = OutputCoverageTestFitness.class.getCanonicalName();
+					break;
+				case METHOD:
+					typeOfGoal = MethodCoverageTestFitness.class.getCanonicalName();
+					break;
+				case METHODNOEXCEPTION:
+					typeOfGoal = MethodNoExceptionCoverageTestFitness.class.getCanonicalName();
+					break;
+				case CBRANCH:
+					typeOfGoal = CBranchTestFitness.class.getCanonicalName();
+					break;
+				default:
+					logger.error("Criterion '" + criterion + "' might not be supported.");
+					break;
+			}
+
+			if (typeOfGoal != null) {
+				this.numCoveredGoalsPerCriterion.put(typeOfGoal, new MutablePair<Integer, Integer>(0, 0));
+			}
+		}
+
+		assert this.numCoveredGoalsPerCriterion.size() == Properties.CRITERION.length;
+		assert this.numCoveredGoalsPerCriterion.size() == this.suiteFitnesses.size();
+	}
+
 	/**
 	 * Computes overall coverage and fitness of a {@link org.evosuite.testsuite.TestSuiteChromosome}
 	 * object based on a record of how many goals of each fitness function type have been covered.
@@ -445,8 +496,7 @@ public abstract class AbstractMOSA<T extends Chromosome> extends GeneticAlgorith
 			double totalNumberOfGoals = numCoveredGoalsPerCriterion.get(typeOfGoal).getRight();
 			assert numberCoveredGoals <= totalNumberOfGoals;
 
-			if (totalNumberOfGoals == 0
-				  && typeOfGoal.equals(ExceptionCoverageTestFitness.class.getCanonicalName())) {
+			if (totalNumberOfGoals == 0) {
 				coverage += 1.0;
 			} else {
 				assert totalNumberOfGoals > 0;
