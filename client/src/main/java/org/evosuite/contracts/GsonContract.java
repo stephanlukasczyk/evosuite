@@ -30,6 +30,13 @@ import java.util.List;
 /**
  * A contract checking for equality of an object before and after serialization with GSON.
  *
+ * <p>Each object will be fed to Google's GSON library, serialized to JSON format, and
+ * deserialized back from JSON.  The resulting object should be equal to the initial object.  If
+ * this is not the case, we also compare the XML representations, created by XStream; this is
+ * because we want to remove false positives that occur only due to an insufficient {@code equals}
+ * implementation of some types.
+ * </p>
+ *
  * @author Stephan Lukasczyk
  */
 public class GsonContract extends Contract {
@@ -42,6 +49,7 @@ public class GsonContract extends Contract {
         xstream = new XStream();
     }
 
+    /** {@inheritDoc} */
     @Override
     public ContractViolation check(Statement statement, Scope scope, Throwable exception) {
         for (Object originalObject : scope.getObjects()) {
@@ -59,6 +67,7 @@ public class GsonContract extends Contract {
         return null;
     }
 
+    /** {@inheritDoc} */
     @Override
     public void addAssertionAndComments(
             Statement statement, List<VariableReference> variables, Throwable exception) {
