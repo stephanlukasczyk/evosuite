@@ -87,6 +87,9 @@ public class ContractChecker extends ExecutionObserver {
 		contracts.add(new EqualsNullContract());
 		contracts.add(new EqualsSymmetricContract());
 
+		// Gson serialization contract
+		contracts.add(new GsonContract());
+
 		loadJUnitTheories();
 	}
 
