@@ -314,6 +314,7 @@ public enum RuntimeVariable {
 	EqualsHashcodeContract,
 	EqualsNullContract,
 	EqualsSymmetricContract,
+	GsonContract,
 	HashCodeReturnsNormallyContract,
 	JCrasherExceptionContract,
 	NullPointerExceptionContract,

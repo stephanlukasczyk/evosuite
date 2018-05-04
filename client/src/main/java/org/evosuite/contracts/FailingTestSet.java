@@ -201,6 +201,7 @@ public class FailingTestSet {
 		ClientServices.getInstance().getClientNode().trackOutputVariable(RuntimeVariable.EqualsHashcodeContract, getNumberOfViolations(EqualsHashcodeContract.class));
 		ClientServices.getInstance().getClientNode().trackOutputVariable(RuntimeVariable.EqualsNullContract, getNumberOfViolations(EqualsNullContract.class));
 		ClientServices.getInstance().getClientNode().trackOutputVariable(RuntimeVariable.EqualsSymmetricContract, getNumberOfViolations(EqualsSymmetricContract.class));
+		ClientServices.getInstance().getClientNode().trackOutputVariable(RuntimeVariable.GsonContract, getNumberOfViolations(GsonContract.class));
 		ClientServices.getInstance().getClientNode().trackOutputVariable(RuntimeVariable.HashCodeReturnsNormallyContract, getNumberOfViolations(HashCodeReturnsNormallyContract.class));
 		ClientServices.getInstance().getClientNode().trackOutputVariable(RuntimeVariable.JCrasherExceptionContract, getNumberOfViolations(JCrasherExceptionContract.class));
 		ClientServices.getInstance().getClientNode().trackOutputVariable(RuntimeVariable.NullPointerExceptionContract, getNumberOfViolations(NullPointerExceptionContract.class));
