@@ -64,7 +64,7 @@ public class GsonContract extends Contract {
                 final String oXML = xstream.toXML(originalObject);
                 final String deserializeXML = xstream.toXML(gsonDeserialize);
                 if (!oXML.equals(deserializeXML)) {
-                    logger.warn("Found a contract violation.\n\t\tOrig: " + originalObject
+                    logger.debug("Found a contract violation.\n\t\tOrig: " + originalObject
                             + "\n\t\tGSON: " + gsonDeserialize + "\n\t\tJSON: " + gsonResult);
                     return new ContractViolation(this, statement, exception);
                 }
