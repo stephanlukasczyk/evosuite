@@ -67,11 +67,7 @@ public class GsonContract extends Contract {
                     logger.warn("Found a contract violation.\n\t\tOrig: " + originalObject
                             + "\n\t\tGSON: " + gsonDeserialize + "\n\t\tJSON: " + gsonResult);
                     return new ContractViolation(this, statement, exception);
-                } else {
-                    int foo = 0;
                 }
-            } else {
-                int bar = 0;
             }
         }
         return null;
