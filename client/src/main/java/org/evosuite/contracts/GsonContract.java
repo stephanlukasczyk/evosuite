@@ -24,6 +24,8 @@ import com.thoughtworks.xstream.XStream;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.statements.Statement;
 import org.evosuite.testcase.variable.VariableReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -40,6 +42,8 @@ import java.util.List;
  * @author Stephan Lukasczyk
  */
 public class GsonContract extends Contract {
+
+    private static Logger logger = LoggerFactory.getLogger(Contract.class);
 
     private final Gson gson;
     private final XStream xstream;
@@ -60,8 +64,14 @@ public class GsonContract extends Contract {
                 final String oXML = xstream.toXML(originalObject);
                 final String deserializeXML = xstream.toXML(gsonDeserialize);
                 if (!oXML.equals(deserializeXML)) {
+                    logger.warn("Found a contract violation.\n\t\tOrig: " + originalObject
+                            + "\n\t\tGSON: " + gsonDeserialize + "\n\t\tJSON: " + gsonResult);
                     return new ContractViolation(this, statement, exception);
+                } else {
+                    int foo = 0;
                 }
+            } else {
+                int bar = 0;
             }
         }
         return null;
@@ -71,7 +81,6 @@ public class GsonContract extends Contract {
     @Override
     public void addAssertionAndComments(
             Statement statement, List<VariableReference> variables, Throwable exception) {
-        statement.addComment("Equality could neither be shown using GSON nor using XStream."
-                + exception.getMessage());
+        statement.addComment("GsonContract failed.");
     }
 }
