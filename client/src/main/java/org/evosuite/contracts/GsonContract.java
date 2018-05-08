@@ -85,6 +85,12 @@ public class GsonContract extends Contract {
     @Override
     public void addAssertionAndComments(
             Statement statement, List<VariableReference> variables, Throwable exception) {
-        statement.addComment("GsonContract failed.");
+        final String vars =
+                variables != null && variables.size() > 0
+                        ? ", Variables: " + variables.toString() : "";
+        final String ex =
+                exception != null
+                        ? ", Exception: " + exception.getMessage() : "";
+        statement.addComment("GsonContract failed. Statement: " + statement + vars + ex);
     }
 }
