@@ -27,6 +27,7 @@ import org.evosuite.testcase.variable.VariableReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.TypeVariable;
 import java.util.List;
 
 /**
@@ -57,6 +58,13 @@ public class GsonContract extends Contract {
     @Override
     public ContractViolation check(Statement statement, Scope scope, Throwable exception) {
         for (Object originalObject : scope.getObjects()) {
+            // if object has generic type, ignore it, because GSON cannot handle those properly
+            final TypeVariable<? extends Class<?>>[] typeParameters =
+                    originalObject.getClass().getTypeParameters();
+            if (typeParameters.length > 0) {
+                continue;
+            }
+
             final String gsonResult = gson.toJson(originalObject);
             final Object gsonDeserialize = gson.fromJson(gsonResult, originalObject.getClass());
 
