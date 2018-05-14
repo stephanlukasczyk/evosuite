@@ -34,7 +34,7 @@ import java.util.List;
  * A contract checking for equality of an object before and after serialization with GSON.
  *
  * <p>Each object will be fed to Google's GSON library, serialized to JSON format, and
- * deserialized back from JSON.  The resulting object should be equal to the initial object.  If
+ * de-serialized back from JSON.  The resulting object should be equal to the initial object.  If
  * this is not the case, we also compare the XML representations, created by XStream; this is
  * because we want to remove false positives that occur only due to an insufficient {@code equals}
  * implementation of some types.
@@ -65,7 +65,7 @@ public class GsonContract extends Contract {
                 continue;
             }
 
-            // skip Object, as it will not be deserialized correctly
+            // skip Object, as it will not be de-serialized correctly
             if ("Object".equals(originalObject.getClass().getSimpleName())) {
                 continue;
             }
