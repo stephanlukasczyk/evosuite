@@ -65,6 +65,11 @@ public class GsonContract extends Contract {
                 continue;
             }
 
+            // skip Object, as it will not be deserialized correctly
+            if ("Object".equals(originalObject.getClass().getSimpleName())) {
+                continue;
+            }
+
             final String gsonResult = gson.toJson(originalObject);
             final Object gsonDeserialize = gson.fromJson(gsonResult, originalObject.getClass());
 
