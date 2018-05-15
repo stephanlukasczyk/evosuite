@@ -66,7 +66,7 @@ public class GsonContract extends Contract {
       }
 
       // consider only objects of the target class' type to decrease number of false positives
-      if (!originalObject.getClass().getSimpleName().equals(Properties.TARGET_CLASS)) {
+      if (!originalObject.getClass().equals(Properties.getTargetClassAndDontInitialise())) {
         continue;
       }
 
