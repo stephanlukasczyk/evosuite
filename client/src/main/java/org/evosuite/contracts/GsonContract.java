@@ -21,6 +21,7 @@ package org.evosuite.contracts;
 
 import com.google.gson.Gson;
 import com.thoughtworks.xstream.XStream;
+import org.evosuite.Properties;
 import org.evosuite.testcase.execution.Scope;
 import org.evosuite.testcase.statements.Statement;
 import org.evosuite.testcase.variable.VariableReference;
@@ -62,6 +63,10 @@ public class GsonContract extends Contract {
             final TypeVariable<? extends Class<?>>[] typeParameters =
                     originalObject.getClass().getTypeParameters();
             if (typeParameters.length > 0) {
+                continue;
+            }
+
+            if (!originalObject.getClass().getSimpleName().equals(Properties.TARGET_CLASS)) {
                 continue;
             }
 
