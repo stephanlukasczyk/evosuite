@@ -20,6 +20,7 @@
 package org.evosuite.contracts;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.thoughtworks.xstream.XStream;
 import java.lang.reflect.TypeVariable;
 import java.util.List;
@@ -49,7 +50,7 @@ public class GsonContract extends Contract {
   private final XStream xstream;
 
   GsonContract() {
-    gson = new Gson();
+    gson = new GsonBuilder().serializeNulls().create();
     xstream = new XStream();
   }
 
