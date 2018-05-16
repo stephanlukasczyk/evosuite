@@ -71,6 +71,11 @@ public class GsonContract extends Contract {
         continue;
       }
 
+      // skip inner classes as they can only be de-serialized by GSON if they are static
+      if (originalObject.getClass().isMemberClass()) {
+        continue;
+      }
+
       // skip Object, as it will not be de-serialized correctly
       if ("Object".equals(originalObject.getClass().getSimpleName())) {
         continue;
